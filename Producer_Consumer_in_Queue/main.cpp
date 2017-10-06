@@ -8,10 +8,12 @@
 
 DWORD WINAPI TestInsertToQueue(LPVOID param)
 {
+	srand(1);
 	Queue* q = (Queue*)param;
 
 	Student st;
-	for (int i = 1; i < 21; i++)
+	int i = 1;
+	while (true)
 	{
 		st.stno = i + 1000;
 		st.age = i + 20;
@@ -21,30 +23,38 @@ DWORD WINAPI TestInsertToQueue(LPVOID param)
 		st.name[3] = 64 + i;	// Ascii Code of 65 == A
 		st.name[4] = '\0';
 
+		while (is_full(q)); // is full. MAX is 20
+			wait();
+
 		insert(q, st);
 		printf("\n *** Inserted ...\n");
+		i++;
+		wait();
 	}
 	return 0;
 }
 
 DWORD WINAPI TestRemoveFromQueue(LPVOID param)
 {
+	srand(2);
 	Queue* q = (Queue*)param;
 
 	Student st;
 
 	while (true)
-		if (!is_empty(q))
-		{
-			printf("\n *** Before Removing ...\n");
-			st = remove(q);
-			printf("\n *** After Removing ...\n");
+	{
+		while (is_empty(q))
+			wait();
 
-			printf("Student Name: %s\n", st.name);
-			printf("Student ID  : %d\n", st.stno);
-			printf("Student Age : %d\n", st.age);
-		}
+		//if (!is_empty(q)) ... the below:
+		st = remove(q);
 
+		printf("\n *** Removed ...\n ");
+		printf("Student Name: %s\n", st.name);
+		printf("Student ID  : %d\n", st.stno);
+		printf("Student Age : %d\n", st.age);
+		wait();
+	}
 	return 0;
 }
 
@@ -58,6 +68,7 @@ int main()
 	//initializeQ(&q); // Can it be here instead?! answer: NO, Not Normally...
 	// because the remove thread would want to free an already empty_space!
 	//	but now that i've putten an init_func call, in the remove_func (i had to!), it doesn't matter any more!
+	srand(3);
 
 	while (true)
 	{

@@ -139,6 +139,15 @@ bool is_empty(Queue* q)
 	return(is_it_empty);
 }
 
+bool is_full(Queue* q)
+{
+	WaitForSingleObject(mutex, INFINITE);
+	bool is_it_full = (q->count == MAX);
+	ReleaseMutex(mutex);
+
+	return(is_it_full);
+}
+
 void fakeStudMaker(Queue* q, int n)
 {
 	Student st;
@@ -163,5 +172,23 @@ int countSt(Queue* q)
 	ReleaseMutex(mutex);
 
 	return count;
+}
+
+void delay(long double msecs)
+{
+	Sleep(msecs);
+}
+
+long double random()
+{
+	return (long double)rand() / (long double)((unsigned)RAND_MAX + 1) * 500;
+}
+
+void wait()
+{
+	// it attaches delay and random functions to make a small wait.
+	// define 3 different params, before calling it in the 3 threads: srand(n);
+	long msecs = random();
+	delay(msecs);
 }
 

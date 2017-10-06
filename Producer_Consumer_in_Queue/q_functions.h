@@ -31,7 +31,11 @@ void showQ(Queue* q);
 void clearQ(Queue* q);
 void initializeQ(Queue* q);
 bool is_empty(Queue* q);
+bool is_full(Queue* q);
 void fakeStudMaker(Queue* q, int n);
 int countSt(Queue* q);
+void delay(long double msecs);
+long double random();
+void wait();
 
 #endif
