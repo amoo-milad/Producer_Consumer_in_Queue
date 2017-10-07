@@ -24,6 +24,12 @@ struct Queue
 	int count;
 };
 
+struct threadParams
+{
+	int seed;
+	Queue q;
+};
+
 void getStudent(Queue* q);
 void insert(Queue* q, Student st);
 Student remove(Queue* q);
