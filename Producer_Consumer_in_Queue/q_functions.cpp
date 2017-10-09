@@ -1,8 +1,9 @@
 // all the necessary functions in the queue.
 #include "stdafx.h"
 #include <stdlib.h>
-#include "q_functions.h"
 #include <windows.h>
+#include "q_functions.h"
+
 
 HANDLE mutex = CreateMutex(NULL, FALSE, NULL);
 

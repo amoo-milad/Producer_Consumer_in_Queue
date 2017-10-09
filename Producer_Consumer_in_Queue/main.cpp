@@ -11,14 +11,8 @@ HANDLE hNotEmpty = CreateEvent(NULL, TRUE, FALSE, NULL);
 
 DWORD WINAPI producer(LPVOID tpn) // TestInsertToQueue
 {
-	//srand(1);  // <=hey, why not using this very simple thing?!
-	// is some thing wrong with the line above? (writing '1' instead of passing seed '1' and defining threadParams).
-	// since we use a seperate thread for this function (one thread for this one func), then its ok.
-	threadParams* tp = (threadParams*)tpn;
-	Queue* q = tp->q;
-	srand(tp->seed);
-
-	// not here ... HANDLE hPauseIns = CreateEvent(NULL, TRUE, FALSE, NULL);
+	srand(1);
+	Queue* q = (Queue*)tpn;
 
 	Student st;
 	int i = 1;
@@ -34,9 +28,9 @@ DWORD WINAPI producer(LPVOID tpn) // TestInsertToQueue
 
 		if (is_full(q)) // is full. MAX is 20
 			ResetEvent(hNotFull);
-			
+
 		WaitForSingleObject(hNotFull, INFINITE);
-			//Sleep;
+		//Sleep;
 
 		insert(q, st);
 		SetEvent(hNotEmpty);
@@ -50,11 +44,9 @@ DWORD WINAPI producer(LPVOID tpn) // TestInsertToQueue
 
 DWORD WINAPI consumer(LPVOID tpn) // TestRemoveFromQueue
 {
-	//srand(2);	// <=the same question here; is this ok? I think it is.
-	threadParams* tp = (threadParams*)tpn;
-	Queue* q = tp->q;
-	srand(tp->seed);
-	
+	srand(1);
+	Queue* q = (Queue*)tpn;
+
 	Student st;
 
 	while (true)
@@ -63,12 +55,12 @@ DWORD WINAPI consumer(LPVOID tpn) // TestRemoveFromQueue
 			ResetEvent(hNotEmpty);
 
 		WaitForSingleObject(hNotEmpty, INFINITE);
-//			Sleep;
+		//			Sleep;
 
 		if (!is_empty(q)) // Which is not ever! ... the below:
-		st = remove(q);
+			st = remove(q);
 		SetEvent(hNotFull);
-//			wakeup(TestInsertToQueue);
+		//			wakeup(TestInsertToQueue);
 
 		printf("\n *** Removed ...\n ");
 		printf("Student Name: %s\n", st.name);
@@ -84,15 +76,8 @@ int main()
 	Queue q;
 	initializeQ(&q);
 
-	threadParams tp1;
-	tp1.seed = 1;
-	tp1.q = &q;
-	threadParams tp2;
-	tp2.seed = 2;
-	tp2.q = &q;
-
-	HANDLE hInsert = CreateThread(NULL, 0, &producer, &tp1, 0, NULL);
-	HANDLE hRemove = CreateThread(NULL, 0, &consumer, &tp2, 0, NULL);
+	HANDLE hInsert = CreateThread(NULL, 0, &producer, &q, 0, NULL);
+	HANDLE hRemove = CreateThread(NULL, 0, &consumer, &q, 0, NULL);
 	//initializeQ(&q); // Can it be here instead?! answer: NO, Not Normally...
 	// because the remove thread would want to free an already empty_space!
 	//	but now that i've putten an init_func call, in the remove_func (i had to!), it doesn't matter any more!
