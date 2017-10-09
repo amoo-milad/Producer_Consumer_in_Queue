@@ -27,7 +27,7 @@ struct Queue
 struct threadParams
 {
 	int seed;
-	Queue q;
+	Queue* q;
 };
 
 void getStudent(Queue* q);

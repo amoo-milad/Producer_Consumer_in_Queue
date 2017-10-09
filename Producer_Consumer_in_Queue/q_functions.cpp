@@ -12,7 +12,7 @@ void getStudent(Queue* q)
 {
 	Student std;
 	printf("Enter students name:");
-	scanf_s("%s", std.name);
+	scanf("%s", std.name);
 	printf("Enter students IDno:");
 	scanf_s("%d", &std.stno);
 	printf("Enter students age:");
@@ -188,7 +188,7 @@ void wait()
 {
 	// it attaches delay and random functions to make a small wait.
 	// define 3 different params, before calling it in the 3 threads: srand(n);
-	long msecs = random();
+	long double msecs = random();
 	delay(msecs);
 }
 

@@ -6,16 +6,16 @@
 #include <windows.h>
 #include "q_functions.h"
 
-HANDLE hPauseFull = CreateEvent(NULL, TRUE, FALSE, NULL);
-HANDLE hPauseEmpty = CreateEvent(NULL, TRUE, FALSE, NULL);
+HANDLE hNotFull = CreateEvent(NULL, TRUE, FALSE, NULL);
+HANDLE hNotEmpty = CreateEvent(NULL, TRUE, FALSE, NULL);
 
-DWORD WINAPI TestInsertToQueue(LPVOID tpn)
+DWORD WINAPI producer(LPVOID tpn) // TestInsertToQueue
 {
 	//srand(1);  // <=hey, why not using this very simple thing?!
 	// is some thing wrong with the line above? (writing '1' instead of passing seed '1' and defining threadParams).
 	// since we use a seperate thread for this function (one thread for this one func), then its ok.
 	threadParams* tp = (threadParams*)tpn;
-	Queue* q = &tp->q;
+	Queue* q = tp->q;
 	srand(tp->seed);
 
 	// not here ... HANDLE hPauseIns = CreateEvent(NULL, TRUE, FALSE, NULL);
@@ -33,14 +33,13 @@ DWORD WINAPI TestInsertToQueue(LPVOID tpn)
 		st.name[4] = '\0';
 
 		if (is_full(q)) // is full. MAX is 20
-///			SetEvent(hPauseFull);
-///		if(hPauseFull)
-			WaitForSingleObject(hPauseFull, INFINITE);
+			ResetEvent(hNotFull);
+			
+		WaitForSingleObject(hNotFull, INFINITE);
 			//Sleep;
 
 		insert(q, st);
-		SetEvent(hPauseEmpty);  /// or reset?
-//		wakeup(TestRemoveFromQueue);////
+		SetEvent(hNotEmpty);
 
 		printf("\n *** Inserted ...\n");
 		i++;
@@ -49,11 +48,11 @@ DWORD WINAPI TestInsertToQueue(LPVOID tpn)
 	return 0;
 }
 
-DWORD WINAPI TestRemoveFromQueue(LPVOID tpn)
+DWORD WINAPI consumer(LPVOID tpn) // TestRemoveFromQueue
 {
 	//srand(2);	// <=the same question here; is this ok? I think it is.
 	threadParams* tp = (threadParams*)tpn;
-	Queue* q = &tp->q;
+	Queue* q = tp->q;
 	srand(tp->seed);
 	
 	Student st;
@@ -61,14 +60,14 @@ DWORD WINAPI TestRemoveFromQueue(LPVOID tpn)
 	while (true)
 	{
 		if (is_empty(q))
-///			SetEvent(hPauseEmpty);
-///		if (hPauseEmpty)
-			WaitForSingleObject(hPauseEmpty, INFINITE);
+			ResetEvent(hNotEmpty);
+
+		WaitForSingleObject(hNotEmpty, INFINITE);
 //			Sleep;
 
 		if (!is_empty(q)) // Which is not ever! ... the below:
 		st = remove(q);
-		SetEvent(hPauseFull); /// or reset?
+		SetEvent(hNotFull);
 //			wakeup(TestInsertToQueue);
 
 		printf("\n *** Removed ...\n ");
@@ -87,13 +86,13 @@ int main()
 
 	threadParams tp1;
 	tp1.seed = 1;
-	tp1.q = q;
+	tp1.q = &q;
 	threadParams tp2;
 	tp2.seed = 2;
-	tp2.q = q;
+	tp2.q = &q;
 
-	HANDLE hInsert = CreateThread(NULL, 0, &TestInsertToQueue, &tp1, 0, NULL);
-	HANDLE hRemove = CreateThread(NULL, 0, &TestRemoveFromQueue, &tp2, 0, NULL);
+	HANDLE hInsert = CreateThread(NULL, 0, &producer, &tp1, 0, NULL);
+	HANDLE hRemove = CreateThread(NULL, 0, &consumer, &tp2, 0, NULL);
 	//initializeQ(&q); // Can it be here instead?! answer: NO, Not Normally...
 	// because the remove thread would want to free an already empty_space!
 	//	but now that i've putten an init_func call, in the remove_func (i had to!), it doesn't matter any more!
