@@ -6,9 +6,6 @@
 #include <windows.h>
 #include "q_functions.h"
 
-HANDLE hNotFull = CreateEvent(NULL, TRUE, FALSE, NULL);
-HANDLE hNotEmpty = CreateEvent(NULL, TRUE, FALSE, NULL);
-
 DWORD WINAPI producer(LPVOID tpn) // TestInsertToQueue
 {
 	srand(1);
@@ -25,15 +22,8 @@ DWORD WINAPI producer(LPVOID tpn) // TestInsertToQueue
 		st.name[2] = '.';
 		st.name[3] = 64 + i;	// Ascii Code of 65 == A
 		st.name[4] = '\0';
-
-		if (is_full(q)) // is full. MAX is 20
-			ResetEvent(hNotFull);
-
-		WaitForSingleObject(hNotFull, INFINITE);
-		//Sleep;
-
+		
 		insert(q, st);
-		SetEvent(hNotEmpty);
 
 		printf("\n *** Inserted ...\n");
 		i++;
@@ -51,16 +41,7 @@ DWORD WINAPI consumer(LPVOID tpn) // TestRemoveFromQueue
 
 	while (true)
 	{
-		if (is_empty(q))
-			ResetEvent(hNotEmpty);
-
-		WaitForSingleObject(hNotEmpty, INFINITE);
-		//			Sleep;
-
-		if (!is_empty(q)) // Which is not ever! ... the below:
-			st = remove(q);
-		SetEvent(hNotFull);
-		//			wakeup(TestInsertToQueue);
+		st = remove(q);
 
 		printf("\n *** Removed ...\n ");
 		printf("Student Name: %s\n", st.name);

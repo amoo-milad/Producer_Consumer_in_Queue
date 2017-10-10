@@ -4,9 +4,6 @@
 #include <windows.h>
 #include "q_functions.h"
 
-
-HANDLE mutex = CreateMutex(NULL, FALSE, NULL);
-
 const int MAX = 20;
 
 void getStudent(Queue* q)
@@ -24,45 +21,66 @@ void getStudent(Queue* q)
 
 void insert(Queue* q, Student st)
 {
-	WaitForSingleObject(mutex, INFINITE);
+	WaitForSingleObject(q->hMutex, INFINITE);
 
-	Node* node;
-	if (is_empty(q))
-	{
-		node = q->down;
+	if (is_full(q)) // is full. MAX is 20
+		ResetEvent(q->hNotFull);
+
+	WaitForSingleObject(q->hNotFull, INFINITE);
+	//Sleep;
+	{	// insert 
+
+		Node* node;
+		if (is_empty(q))
+		{
+			node = q->down;
+		}
+		else
+		{
+			node = (Node*)malloc(sizeof Node);
+			node->next = NULL;
+			node->prev = q->top;
+			q->top->next = node;
+		}
+
+		node->st = st;
+
+		q->top = node; // same as before:  q->top->next;
+		q->count++;
 	}
-	else
-	{
-		node = (Node*)malloc(sizeof Node);
-		node->next = NULL;
-		node->prev = q->top;
-		q->top->next = node;
-	}
 
-	node->st = st;
-
-	q->top = node; // same as before:  q->top->next;
-	q->count++;
-
-	ReleaseMutex(mutex);
+	SetEvent(q->hNotEmpty);
+	ReleaseMutex(q->hMutex);
 }
 
 Student remove(Queue* q)
 {
-	WaitForSingleObject(mutex, INFINITE);
+	WaitForSingleObject(q->hMutex, INFINITE);
 
-	Node* node = q->down;
-	q->down = q->down->next;
-	//	q->down->prev = NULL;	// its unnecessary and makes some problems too.
-	q->count--;
 	if (is_empty(q))
-		initializeQ(q); // i'm all aware that it's a shitty code! :/
+		ResetEvent(q->hNotEmpty);
 
-	ReleaseMutex(mutex);
+	WaitForSingleObject(q->hNotEmpty, INFINITE);
+	//			Sleep;
 
-	Student std = node->st;
-	free(node);
-	return std;
+//	if (!is_empty(q)) // Which is not ever! ... the below:
+	{
+		Node* node = q->down;
+		q->down = q->down->next;
+		//	q->down->prev = NULL;	// its unnecessary and makes some problems too.
+		q->count--;
+		if (is_empty(q))
+			initializeQ(q); // i'm all aware that it's a shitty code! :/
+
+		ReleaseMutex(q->hMutex);
+
+		Student std = node->st;
+		free(node);
+		return std;
+	}
+
+	SetEvent(q->hNotFull);
+	ReleaseMutex(q->hMutex);
 }
 
 void showQ(Queue* q)
@@ -77,7 +95,7 @@ void showQ(Queue* q)
 	int i = 1;
 	Node* node;
 
-	WaitForSingleObject(mutex, INFINITE);
+	WaitForSingleObject(q->hMutex, INFINITE);
 
 	for (node = q->down, i; node; node = node->next, i++)
 	{
@@ -87,7 +105,7 @@ void showQ(Queue* q)
 		printf("\t %d \n", node->st.age);
 	}
 
-	ReleaseMutex(mutex);
+	ReleaseMutex(q->hMutex);
 }
 
 void clearQ(Queue* q)
@@ -100,7 +118,7 @@ void clearQ(Queue* q)
 
 	Node* node;
 
-	WaitForSingleObject(mutex, INFINITE);
+	WaitForSingleObject(q->hMutex, INFINITE);
 
 	while (q->top != q->down)
 	{
@@ -112,14 +130,18 @@ void clearQ(Queue* q)
 
 	initializeQ(q);
 
-	ReleaseMutex(mutex); // can it be upper (before the init_func) ?
+	ReleaseMutex(q->hMutex); // can it be upper (before the init_func) ?
 
 	printf("\nthe queue is cleared. ");
 }
 
 void initializeQ(Queue* q)
 {
-	WaitForSingleObject(mutex, INFINITE);
+	q->hMutex = CreateMutex(NULL, FALSE, NULL);
+	WaitForSingleObject(q->hMutex, INFINITE);
+
+	q->hNotFull = CreateEvent(NULL, TRUE, FALSE, NULL);
+	q->hNotEmpty = CreateEvent(NULL, TRUE, FALSE, NULL);
 
 	q->down = (Node*)malloc(sizeof Node);
 	q->down->prev = NULL;
@@ -128,23 +150,23 @@ void initializeQ(Queue* q)
 	q->top = q->down;
 	q->count = 0;
 
-	ReleaseMutex(mutex);
+	ReleaseMutex(q->hMutex);
 }
 
 bool is_empty(Queue* q)
 {
-	WaitForSingleObject(mutex, INFINITE);
+	WaitForSingleObject(q->hMutex, INFINITE);
 	bool is_it_empty = !q->count;
-	ReleaseMutex(mutex);
+	ReleaseMutex(q->hMutex);
 
 	return(is_it_empty);
 }
 
 bool is_full(Queue* q)
 {
-	WaitForSingleObject(mutex, INFINITE);
+	WaitForSingleObject(q->hMutex, INFINITE);
 	bool is_it_full = (q->count == MAX);
-	ReleaseMutex(mutex);
+	ReleaseMutex(q->hMutex);
 
 	return(is_it_full);
 }
@@ -168,9 +190,9 @@ void fakeStudMaker(Queue* q, int n)
 
 int countSt(Queue* q)
 {
-	WaitForSingleObject(mutex, INFINITE);
+	WaitForSingleObject(q->hMutex, INFINITE);
 	int count = q->count;
-	ReleaseMutex(mutex);
+	ReleaseMutex(q->hMutex);
 
 	return count;
 }

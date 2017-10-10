@@ -22,6 +22,9 @@ struct Queue
 	Node* top;
 	Node* down;
 	int count;
+	HANDLE hNotFull;
+	HANDLE hNotEmpty;
+	HANDLE hMutex;
 };
 
 void getStudent(Queue* q);
