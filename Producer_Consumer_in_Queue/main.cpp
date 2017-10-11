@@ -9,7 +9,7 @@
 DWORD WINAPI producer(LPVOID tpn) // TestInsertToQueue
 {
 	srand(1);
-	Queue* q = (Queue*)tpn;
+	Queue* q = (Queue*) tpn;
 
 	Student st;
 	int i = 1;
@@ -34,8 +34,8 @@ DWORD WINAPI producer(LPVOID tpn) // TestInsertToQueue
 
 DWORD WINAPI consumer(LPVOID tpn) // TestRemoveFromQueue
 {
-	srand(1);
-	Queue* q = (Queue*)tpn;
+	srand(2);
+	Queue* q = (Queue*) tpn;
 
 	Student st;
 

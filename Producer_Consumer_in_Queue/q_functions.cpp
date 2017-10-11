@@ -21,12 +21,10 @@ void getStudent(Queue* q)
 
 void insert(Queue* q, Student st)
 {
+	WaitForSingleObject(q->hNotFull, INFINITE);
+	
 	WaitForSingleObject(q->hMutex, INFINITE);
 
-	if (is_full(q)) // is full. MAX is 20
-		ResetEvent(q->hNotFull);
-
-	WaitForSingleObject(q->hNotFull, INFINITE);
 	//Sleep;
 	{	// insert 
 
@@ -50,20 +48,22 @@ void insert(Queue* q, Student st)
 	}
 
 	SetEvent(q->hNotEmpty);
+	
+	if (is_full(q)) // is full. MAX is 20
+		ResetEvent(q->hNotFull);
+
 	ReleaseMutex(q->hMutex);
 }
 
 Student remove(Queue* q)
 {
-	WaitForSingleObject(q->hMutex, INFINITE);
-
-	if (is_empty(q))
-		ResetEvent(q->hNotEmpty);
-
+	Student std;
 	WaitForSingleObject(q->hNotEmpty, INFINITE);
 	//			Sleep;
 
-//	if (!is_empty(q)) // Which is not ever! ... the below:
+	WaitForSingleObject(q->hMutex, INFINITE);
+
+	//	if (!is_empty(q)) // Which is not ever! ... the below:
 	{
 		Node* node = q->down;
 		q->down = q->down->next;
@@ -74,13 +74,17 @@ Student remove(Queue* q)
 
 		ReleaseMutex(q->hMutex);
 
-		Student std = node->st;
+		std = node->st;
 		free(node);
-		return std;
 	}
-
+	
 	SetEvent(q->hNotFull);
+
+	if (is_empty(q))
+		ResetEvent(q->hNotEmpty);
+
 	ReleaseMutex(q->hMutex);
+	return std;
 }
 
 void showQ(Queue* q)
@@ -140,8 +144,8 @@ void initializeQ(Queue* q)
 	q->hMutex = CreateMutex(NULL, FALSE, NULL);
 	WaitForSingleObject(q->hMutex, INFINITE);
 
-	q->hNotFull = CreateEvent(NULL, TRUE, FALSE, NULL);
-	q->hNotEmpty = CreateEvent(NULL, TRUE, FALSE, NULL);
+	q->hNotFull = CreateEvent(NULL, TRUE, TRUE, NULL);
+	q->hNotEmpty = CreateEvent(NULL, TRUE, TRUE, NULL);
 
 	q->down = (Node*)malloc(sizeof Node);
 	q->down->prev = NULL;
