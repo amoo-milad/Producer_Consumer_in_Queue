@@ -72,7 +72,7 @@ Student remove(Queue* q)
 		if (is_empty(q))
 			initializeQ(q); // i'm all aware that it's a shitty code! :/
 
-		ReleaseMutex(q->hMutex);
+///		ReleaseMutex(q->hMutex);
 
 		std = node->st;
 		free(node);
